@@ -1,7 +1,10 @@
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 const config = require('./config');
+const pool = require('./db/pool');
 const socketService = require('./services/socket');
 const verifyMetaSignature = require('./middleware/metaSignature');
 
@@ -46,6 +49,18 @@ app.use('/api/contacts', require('./routes/contacts'));
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-server.listen(config.port, () => {
-  console.log(`Server running on port ${config.port}`);
+async function start() {
+  // Run database migration on every startup (safe — uses IF NOT EXISTS)
+  const sql = fs.readFileSync(path.join(__dirname, 'db/migrations/001_init.sql'), 'utf8');
+  await pool.query(sql);
+  console.log('Database migration complete');
+
+  server.listen(config.port, () => {
+    console.log(`Server running on port ${config.port}`);
+  });
+}
+
+start().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
