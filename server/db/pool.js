@@ -3,6 +3,7 @@ const config = require('../config');
 
 const pool = new Pool({
   connectionString: config.database.url,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('error', (err) => {
