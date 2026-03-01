@@ -49,18 +49,13 @@ app.use('/api/contacts', require('./routes/contacts'));
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-async function start() {
-  // Run database migration on every startup (safe — uses IF NOT EXISTS)
-  const sql = fs.readFileSync(path.join(__dirname, 'db/migrations/001_init.sql'), 'utf8');
-  await pool.query(sql);
-  console.log('Database migration complete');
-
-  server.listen(config.port, () => {
-    console.log(`Server running on port ${config.port}`);
-  });
-}
-
-start().catch((err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
+// Start listening immediately so Railway health check passes
+server.listen(config.port, () => {
+  console.log(`Server running on port ${config.port}`);
 });
+
+// Run migration after server is up (non-blocking)
+const sql = fs.readFileSync(path.join(__dirname, 'db/migrations/001_init.sql'), 'utf8');
+pool.query(sql)
+  .then(() => console.log('Database migration complete'))
+  .catch((err) => console.error('Migration error:', err.message));
