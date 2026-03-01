@@ -46,8 +46,19 @@ app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/conversations', require('./routes/messages'));
 app.use('/api/contacts', require('./routes/contacts'));
 
-// Health check
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+// Health check — also reports DB status for debugging
+app.get('/health', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT table_name FROM information_schema.tables
+      WHERE table_schema = 'public'
+    `);
+    const tables = result.rows.map(r => r.table_name);
+    res.json({ status: 'ok', tables });
+  } catch (err) {
+    res.json({ status: 'ok', db_error: err.message });
+  }
+});
 
 // Start listening immediately so Railway health check passes
 server.listen(config.port, () => {
