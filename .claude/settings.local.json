@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(psql -U postgres -c \"CREATE DATABASE whatsapp_inbox;\")",
+      "Bash(psql -U postgres -c \"\\\\l\")",
+      "Bash(sudo -u postgres psql -c \"\\\\du\")"
+    ]
+  }
+}
