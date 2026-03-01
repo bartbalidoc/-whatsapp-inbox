@@ -55,7 +55,19 @@ server.listen(config.port, () => {
 });
 
 // Run migration after server is up (non-blocking)
-const sql = fs.readFileSync(path.join(__dirname, 'db/migrations/001_init.sql'), 'utf8');
-pool.query(sql)
-  .then(() => console.log('Database migration complete'))
-  .catch((err) => console.error('Migration error:', err.message));
+// pg cannot run multiple statements in one query — split and run each one
+async function runMigration() {
+  const sql = fs.readFileSync(path.join(__dirname, 'db/migrations/001_init.sql'), 'utf8');
+  const statements = sql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+  const client = await pool.connect();
+  try {
+    for (const statement of statements) {
+      await client.query(statement);
+    }
+    console.log('Database migration complete');
+  } finally {
+    client.release();
+  }
+}
+
+runMigration().catch((err) => console.error('Migration error:', err.message));
