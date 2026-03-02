@@ -17,7 +17,7 @@ socketService.init(server);
 // Signature verification only applies to POST /webhook (not GET verification handshake)
 app.post(
   '/webhook',
-  express.raw({ type: 'application/json' }),
+  express.raw({ type: '*/*' }),
   (req, res, next) => {
     try {
       verifyMetaSignature(req, res, req.body);
