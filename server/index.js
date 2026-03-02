@@ -41,7 +41,15 @@ app.use(cors({
 }));
 
 // GET /webhook — Meta verification handshake (no signature needed)
-app.get('/webhook', require('./routes/webhook'));
+app.get('/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+  if (mode === 'subscribe' && token === process.env.META_VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
+  }
+  res.sendStatus(403);
+});
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/conversations', require('./routes/messages'));
