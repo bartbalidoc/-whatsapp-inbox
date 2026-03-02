@@ -14,8 +14,8 @@ const server = http.createServer(app);
 // Initialize Socket.io
 socketService.init(server);
 
-// Parse raw body for Meta signature verification (must come before json parser)
-app.use(
+// Signature verification only applies to POST /webhook (not GET verification handshake)
+app.post(
   '/webhook',
   express.raw({ type: 'application/json' }),
   (req, res, next) => {
@@ -27,7 +27,8 @@ app.use(
       console.error('Webhook signature error:', err.message);
       return res.sendStatus(403);
     }
-  }
+  },
+  require('./routes/webhook')
 );
 
 // JSON body parser for all other routes
@@ -39,8 +40,8 @@ app.use(cors({
   credentials: true,
 }));
 
-// Routes
-app.use('/webhook', require('./routes/webhook'));
+// GET /webhook — Meta verification handshake (no signature needed)
+app.get('/webhook', require('./routes/webhook'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/conversations', require('./routes/messages'));
