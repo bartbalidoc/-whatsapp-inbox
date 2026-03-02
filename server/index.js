@@ -46,36 +46,8 @@ app.use('/api/conversations', require('./routes/conversations'));
 app.use('/api/conversations', require('./routes/messages'));
 app.use('/api/contacts', require('./routes/contacts'));
 
-// One-time admin setup — protected by SETUP_SECRET env variable
-app.post('/setup-admin', async (req, res) => {
-  const { secret, name, email, password } = req.body;
-  if (!process.env.SETUP_SECRET || secret !== process.env.SETUP_SECRET) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  const bcrypt = require('bcrypt');
-  const hash = await bcrypt.hash(password, 12);
-  await pool.query(
-    `INSERT INTO agents (name, email, password_hash, role)
-     VALUES ($1, $2, $3, 'admin')
-     ON CONFLICT (email) DO NOTHING`,
-    [name, email, hash]
-  );
-  res.json({ ok: true, message: `Admin ${email} created` });
-});
-
-// Health check — also reports DB status for debugging
-app.get('/health', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT table_name FROM information_schema.tables
-      WHERE table_schema = 'public'
-    `);
-    const tables = result.rows.map(r => r.table_name);
-    res.json({ status: 'ok', tables });
-  } catch (err) {
-    res.json({ status: 'ok', db_error: err.message });
-  }
-});
+// Health check
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Start listening immediately so Railway health check passes
 server.listen(config.port, () => {
